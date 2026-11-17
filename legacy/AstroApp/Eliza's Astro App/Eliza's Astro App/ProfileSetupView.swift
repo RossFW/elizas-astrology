@@ -26,6 +26,7 @@ struct ProfileSetupView: View {
         let name: String
         let latitude: Double
         let longitude: Double
+        let timeZone: TimeZone
     }
 
     private var canSave: Bool {
@@ -63,6 +64,7 @@ struct ProfileSetupView: View {
                         in: ...Date.now,
                         displayedComponents: hasBirthTime ? [.date, .hourAndMinute] : [.date]
                     )
+                    .environment(\.timeZone, selectedLocation?.timeZone ?? .current)
 
                     Toggle("I know my exact birth time", isOn: $hasBirthTime)
 
@@ -176,10 +178,12 @@ struct ProfileSetupView: View {
                     birthDate = profile.birthDate
                     hasBirthTime = profile.hasBirthTime
                     locationQuery = profile.birthLocationName
+                    let tzSeconds = Int(profile.birthLongitude / 15.0) * 3600
                     selectedLocation = LocationResult(
                         name: profile.birthLocationName,
                         latitude: profile.birthLatitude,
-                        longitude: profile.birthLongitude
+                        longitude: profile.birthLongitude,
+                        timeZone: TimeZone(secondsFromGMT: tzSeconds) ?? .current
                     )
                 }
             }
@@ -279,7 +283,8 @@ struct ProfileSetupView: View {
                 return LocationResult(
                     name: uniqueParts.joined(separator: ", "),
                     latitude: item.placemark.coordinate.latitude,
-                    longitude: item.placemark.coordinate.longitude
+                    longitude: item.placemark.coordinate.longitude,
+                    timeZone: item.placemark.timeZone ?? .current
                 )
             }
         }

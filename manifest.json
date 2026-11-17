@@ -1,0 +1,18 @@
+{
+  "name": "ElizAstro",
+  "short_name": "ElizAstro",
+  "description": "Your personal celestial companion — natal charts, transits, and synastry, all on-device.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#171933",
+  "background_color": "#171933",
+  "icons": [
+    {
+      "src": "icons/sagittarius.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
