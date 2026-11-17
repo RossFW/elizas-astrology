@@ -5,9 +5,9 @@ import SwiftUI
 // deep navy sky, warm gold accents, cream text
 
 enum AstroTheme {
-    // Primary backgrounds
-    static let navy = Color(red: 0.10, green: 0.12, blue: 0.22)
-    static let deepNavy = Color(red: 0.06, green: 0.07, blue: 0.15)
+    // Primary backgrounds — lightened for readability
+    static let navy = Color(red: 0.13, green: 0.15, blue: 0.26)
+    static let deepNavy = Color(red: 0.09, green: 0.10, blue: 0.20)
 
     // Accent colors
     static let gold = Color(red: 0.90, green: 0.75, blue: 0.35)
@@ -15,12 +15,12 @@ enum AstroTheme {
     static let copper = Color(red: 0.80, green: 0.50, blue: 0.30)
 
     // Text colors
-    static let cream = Color(red: 0.96, green: 0.93, blue: 0.87)
-    static let dimCream = Color(red: 0.70, green: 0.67, blue: 0.60)
+    static let cream = Color.white
+    static let dimCream = Color(red: 0.85, green: 0.82, blue: 0.76)
 
-    // Surface colors (cards, sections)
-    static let cardBackground = Color(red: 0.14, green: 0.16, blue: 0.28)
-    static let cardBorder = Color(red: 0.25, green: 0.27, blue: 0.40)
+    // Surface colors (cards, sections) — lightened
+    static let cardBackground = Color(red: 0.17, green: 0.19, blue: 0.32)
+    static let cardBorder = Color(red: 0.30, green: 0.32, blue: 0.45)
 
     // Element colors (warmer palette matching the poster)
     static func elementColor(_ element: Element) -> Color {

@@ -36,7 +36,7 @@ struct FriendsListView: View {
                 }
             }
             .navigationTitle("Friends")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .preferredColorScheme(.dark)
             .background(AstroTheme.deepNavy)
             .toolbar {
                 Button {
@@ -175,7 +175,7 @@ struct FriendDetailView: View {
         .background(AstroTheme.deepNavy)
         .navigationTitle(profile.firstName)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .preferredColorScheme(.dark)
         .toolbar {
             Button("Edit") { showingEdit = true }
         }

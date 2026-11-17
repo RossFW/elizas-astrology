@@ -89,8 +89,9 @@ struct CompatibilityView: View {
                 .padding()
             }
             .navigationTitle("Compatibility")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .preferredColorScheme(.dark)
             .background(AstroTheme.deepNavy)
+            .scrollContentBackground(.hidden)
             .onChange(of: person1?.persistentModelID) { _, _ in
                 Task { await calculateIfReady() }
             }

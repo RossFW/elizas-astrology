@@ -6,7 +6,7 @@ struct ChartWheelView: View {
 
     private func signColor(_ index: Int) -> Color {
         guard let sign = ZodiacSign(rawValue: index) else { return .gray }
-        return sign.element.color
+        return AstroTheme.elementColor(sign.element)
     }
 
     var body: some View {
@@ -30,8 +30,8 @@ struct ChartWheelView: View {
                     p.closeSubpath()
                 }
 
-                context.fill(path, with: .color(signColor(i).opacity(0.2)))
-                context.stroke(path, with: .color(.gray.opacity(0.3)), lineWidth: 0.5)
+                context.fill(path, with: .color(signColor(i).opacity(0.3)))
+                context.stroke(path, with: .color(Color.white.opacity(0.15)), lineWidth: 0.5)
 
                 // Sign symbol
                 let midAngle = Double(i) * 30 + 15 - Double(chart.ascendantLongitude)
@@ -40,7 +40,7 @@ struct ChartWheelView: View {
 
                 if let sign = ZodiacSign(rawValue: i) {
                     let text = Text(sign.symbol).font(.system(size: outerRadius * 0.09))
-                    context.draw(text.foregroundStyle(signColor(i)), at: symbolPoint)
+                    context.draw(text.foregroundStyle(.white), at: symbolPoint)
                 }
             }
 
@@ -55,7 +55,7 @@ struct ChartWheelView: View {
                 var line = Path()
                 line.move(to: start)
                 line.addLine(to: end)
-                context.stroke(line, with: .color(.gray.opacity(isAngular ? 0.7 : 0.4)),
+                context.stroke(line, with: .color(Color.white.opacity(isAngular ? 0.6 : 0.25)),
                                lineWidth: isAngular ? 1.5 : 0.5)
 
                 // House number — place between this cusp and the next
@@ -63,19 +63,19 @@ struct ChartWheelView: View {
                 var midAngle = cuspLon + angularDistance(from: cuspLon, to: nextCuspLon) / 2.0
                 midAngle = midAngle - chart.ascendantLongitude
                 let houseNumPoint = pointOnCircle(center: center, radius: innerRadius * 0.8, angleDeg: midAngle)
-                let houseText = Text("\(i + 1)").font(.system(size: outerRadius * 0.06)).foregroundStyle(.secondary)
+                let houseText = Text("\(i + 1)").font(.system(size: outerRadius * 0.06)).foregroundStyle(Color.white.opacity(0.5))
                 context.draw(houseText, at: houseNumPoint)
             }
 
             // Draw inner circle
             var innerCircle = Path()
             innerCircle.addArc(center: center, radius: innerRadius, startAngle: .zero, endAngle: .degrees(360), clockwise: false)
-            context.stroke(innerCircle, with: .color(.gray.opacity(0.3)))
+            context.stroke(innerCircle, with: .color(Color.white.opacity(0.2)))
 
             // Draw middle circle
             var midCircle = Path()
             midCircle.addArc(center: center, radius: middleRadius, startAngle: .zero, endAngle: .degrees(360), clockwise: false)
-            context.stroke(midCircle, with: .color(.gray.opacity(0.3)))
+            context.stroke(midCircle, with: .color(Color.white.opacity(0.2)))
 
             // Draw aspect lines
             for aspect in chart.aspects {
@@ -91,7 +91,7 @@ struct ChartWheelView: View {
                 aspectLine.move(to: p1)
                 aspectLine.addLine(to: p2)
 
-                let color: Color = aspect.type.isHarmonious ? .blue.opacity(0.3) : .red.opacity(0.3)
+                let color: Color = aspect.type.isHarmonious ? Color.cyan.opacity(0.35) : Color.red.opacity(0.35)
                 context.stroke(aspectLine, with: .color(color), lineWidth: 0.5)
             }
 
@@ -99,7 +99,7 @@ struct ChartWheelView: View {
             let planetPositions = spreadPlanets(chart.positions, ascendant: chart.ascendantLongitude)
             for (position, displayAngle) in planetPositions {
                 let point = pointOnCircle(center: center, radius: planetRadius, angleDeg: displayAngle)
-                let text = Text(position.body.symbol).font(.system(size: outerRadius * 0.1))
+                let text = Text(position.body.symbol).font(.system(size: outerRadius * 0.1)).foregroundStyle(Color.white)
                 context.draw(text, at: point)
 
                 // Small tick from planet to actual position on wheel
@@ -109,18 +109,18 @@ struct ChartWheelView: View {
                 var tick = Path()
                 tick.move(to: tickStart)
                 tick.addLine(to: tickEnd)
-                context.stroke(tick, with: .color(.purple), lineWidth: 1.5)
+                context.stroke(tick, with: .color(Color.white.opacity(0.6)), lineWidth: 1.5)
             }
 
             // ASC marker
             let ascPoint = pointOnCircle(center: center, radius: outerRadius + 4, angleDeg: 0)
-            let ascText = Text("ASC").font(.system(size: outerRadius * 0.06)).bold().foregroundStyle(.purple)
+            let ascText = Text("ASC").font(.system(size: outerRadius * 0.06)).bold().foregroundStyle(Color.white)
             context.draw(ascText, at: ascPoint)
 
             // MC marker
             let mcAngle = chart.midheavenLongitude - chart.ascendantLongitude
             let mcPoint = pointOnCircle(center: center, radius: outerRadius + 4, angleDeg: mcAngle)
-            let mcText = Text("MC").font(.system(size: outerRadius * 0.06)).bold().foregroundStyle(.purple)
+            let mcText = Text("MC").font(.system(size: outerRadius * 0.06)).bold().foregroundStyle(Color.white)
             context.draw(mcText, at: mcPoint)
         }
         .frame(width: size, height: size)

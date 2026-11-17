@@ -22,7 +22,7 @@ struct HomeView: View {
                         moonSection(report: report)
                     }
                     .padding()
-                } else if isLoading && user != nil {
+                } else {
                     VStack(spacing: 12) {
                         ProgressView()
                             .tint(AstroTheme.gold)
@@ -30,12 +30,14 @@ struct HomeView: View {
                             .font(.subheadline)
                             .foregroundStyle(AstroTheme.dimCream)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.top, 100)
                 }
             }
             .navigationTitle("Home")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .preferredColorScheme(.dark)
             .background(AstroTheme.deepNavy)
+            .scrollContentBackground(.hidden)
             .task(id: user?.birthDate) {
                 await loadChart()
             }

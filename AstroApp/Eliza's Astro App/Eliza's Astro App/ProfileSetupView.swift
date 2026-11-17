@@ -126,31 +126,32 @@ struct ProfileSetupView: View {
                         }
                     }
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-                Button(action: save) {
-                    Group {
-                        if isSaving {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .tint(.white)
-                                Text("Calculating your chart...")
+
+                Section {
+                    Button(action: save) {
+                        Group {
+                            if isSaving {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .tint(.white)
+                                    Text("Calculating your chart...")
+                                }
+                            } else {
+                                Text(isOnboarding ? "See My Chart" : "Save")
+                                    .fontWeight(.bold)
                             }
-                        } else {
-                            Text(isOnboarding ? "See My Chart" : "Save")
-                                .fontWeight(.bold)
                         }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(canSave ? AstroTheme.gold : Color.gray)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(canSave ? AstroTheme.gold : Color.gray)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .buttonStyle(.plain)
+                    .disabled(!canSave)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 8)
-                .disabled(!canSave)
             }
             .navigationTitle(isOnboarding ? "Your Birth Chart" : (existingProfile != nil ? "Edit Profile" : "New Profile"))
             .alert("Save Error", isPresented: Binding(

@@ -34,8 +34,9 @@ struct ChartDetailView: View {
                 }
             }
             .navigationTitle("My Chart")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .preferredColorScheme(.dark)
             .background(AstroTheme.deepNavy)
+            .scrollContentBackground(.hidden)
             .toolbar {
                 if user != nil {
                     Button("Edit") { showingEdit = true }
