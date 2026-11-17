@@ -79,6 +79,10 @@ nonisolated enum ZodiacSign: Int, CaseIterable, Codable, Identifiable, Sendable 
         }
     }
 
+    var imageName: String {
+        "zodiac-\(String(describing: self))"
+    }
+
     var rulingBody: CelestialBody {
         switch self {
         case .aries: .mars

@@ -77,7 +77,7 @@ struct ProfileSetupView: View {
                     if let loc = selectedLocation {
                         HStack {
                             Image(systemName: "mappin.circle.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(AstroTheme.harmonious)
                             Text(loc.name)
                             Spacer()
                             Button("Change") {
@@ -118,7 +118,7 @@ struct ProfileSetupView: View {
                             } label: {
                                 HStack {
                                     Image(systemName: "mappin.circle.fill")
-                                        .foregroundStyle(.purple)
+                                        .foregroundStyle(AstroTheme.gold)
                                     Text(result.name)
                                         .foregroundStyle(.primary)
                                 }
@@ -144,7 +144,7 @@ struct ProfileSetupView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(canSave ? Color.purple : Color.gray)
+                    .background(canSave ? AstroTheme.gold : Color.gray)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)

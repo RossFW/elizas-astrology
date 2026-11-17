@@ -15,7 +15,7 @@ struct HomeView: View {
             ScrollView {
                 if let user = user, let chart = chart, let report = report {
                     VStack(spacing: 24) {
-                        greetingSection(user: user)
+                        greetingSection(user: user, chart: chart)
                         bigThreeSection(chart: chart)
                         retrogradeSection(report: report)
                         weeklyTransitsSection(report: report)
@@ -23,12 +23,19 @@ struct HomeView: View {
                     }
                     .padding()
                 } else if isLoading && user != nil {
-                    ProgressView("Reading the stars...")
-                        .padding(.top, 100)
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .tint(AstroTheme.gold)
+                        Text("Reading the stars...")
+                            .font(.subheadline)
+                            .foregroundStyle(AstroTheme.dimCream)
+                    }
+                    .padding(.top, 100)
                 }
             }
             .navigationTitle("Home")
-            .background(Color(.systemGroupedBackground))
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .background(AstroTheme.deepNavy)
             .task(id: user?.birthDate) {
                 await loadChart()
             }
@@ -57,16 +64,22 @@ struct HomeView: View {
         isLoading = false
     }
 
-    private func greetingSection(user: Profile) -> some View {
-        VStack(spacing: 4) {
-            Text("Hey, \(user.firstName)")
-                .font(.title)
-                .fontWeight(.bold)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(weeklyGreeting())
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func greetingSection(user: Profile, chart: NatalChart) -> some View {
+        HStack(spacing: 16) {
+            Image(chart.sunSign.imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Hey, \(user.firstName)")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(AstroTheme.cream)
+                Text(weeklyGreeting())
+                    .font(.subheadline)
+                    .foregroundStyle(AstroTheme.dimCream)
+            }
+            Spacer()
         }
     }
 
@@ -90,18 +103,17 @@ struct HomeView: View {
                             Text("\(retro.body.name) in \(retro.sign.name)")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
+                                .foregroundStyle(AstroTheme.cream)
                             Spacer()
                             Text("House \(retro.houseInChart)")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AstroTheme.dimCream)
                         }
                         Text(TransitInterpretations.retrogradeInterpretation(retro))
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AstroTheme.dimCream)
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .astroCard()
                 }
             }
         }
@@ -112,16 +124,13 @@ struct HomeView: View {
             SectionHeader(title: "This Week's Energy", icon: "sparkles")
             Text(weekDateRange(start: report.weekStart, end: report.weekEnd))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AstroTheme.dimCream)
 
             if report.topTransits.isEmpty {
                 Text("A relatively quiet week in the cosmos for you. Use this time to recharge and reflect.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(AstroTheme.dimCream)
+                    .astroCard()
             } else {
                 ForEach(report.topTransits) { transit in
                     TransitCard(transit: transit)
@@ -133,20 +142,25 @@ struct HomeView: View {
     private func moonSection(report: WeeklyTransitReport) -> some View {
         HStack {
             Image(systemName: "moon.fill")
-                .foregroundStyle(.purple)
+                .foregroundStyle(AstroTheme.warmGold)
             Text("Moon is currently in \(report.currentMoonSign.name) \(report.currentMoonSign.symbol)")
                 .font(.subheadline)
+                .foregroundStyle(AstroTheme.cream)
             Spacer()
         }
         .padding()
-        .background(Color.purple.opacity(0.1))
+        .background(AstroTheme.gold.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(AstroTheme.gold.opacity(0.2), lineWidth: 0.5)
+        )
     }
 
     private func weekDateRange(start: Date, end: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "MMM d"
-        return "Week of \(fmt.string(from: start)) – \(fmt.string(from: end))"
+        return "Week of \(fmt.string(from: start)) \u{2013} \(fmt.string(from: end))"
     }
 
     private func weeklyGreeting() -> String {

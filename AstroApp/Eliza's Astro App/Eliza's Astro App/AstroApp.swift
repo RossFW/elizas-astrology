@@ -49,6 +49,6 @@ struct MainTabView: View {
                     Label("Synastry", systemImage: "heart.circle")
                 }
         }
-        .tint(.purple)
+        .tint(AstroTheme.gold)
     }
 }

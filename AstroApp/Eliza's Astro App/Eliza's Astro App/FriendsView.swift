@@ -12,20 +12,32 @@ struct FriendsListView: View {
         NavigationStack {
             Group {
                 if friends.isEmpty {
-                    ContentUnavailableView(
-                        "No Friends Yet",
-                        systemImage: "person.2.slash",
-                        description: Text("Add friends and loved ones to see how the stars affect them too")
-                    )
+                    VStack(spacing: 16) {
+                        Image(systemName: "person.2.slash")
+                            .font(.largeTitle)
+                            .foregroundStyle(AstroTheme.dimCream)
+                        Text("No Friends Yet")
+                            .font(.headline)
+                            .foregroundStyle(AstroTheme.cream)
+                        Text("Add friends and loved ones to see how the stars affect them too")
+                            .font(.subheadline)
+                            .foregroundStyle(AstroTheme.dimCream)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(40)
                 } else {
                     List(friends) { friend in
                         NavigationLink(destination: FriendDetailView(profile: friend)) {
                             FriendRow(profile: friend)
                         }
+                        .listRowBackground(AstroTheme.cardBackground)
                     }
+                    .scrollContentBackground(.hidden)
                 }
             }
             .navigationTitle("Friends")
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .background(AstroTheme.deepNavy)
             .toolbar {
                 Button {
                     showingAddFriend = true
@@ -46,21 +58,25 @@ struct FriendRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ZStack {
+            if let chart = chart {
+                Image(chart.sunSign.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+            } else {
                 Circle()
-                    .fill((chart?.sunSign.element.color ?? .gray).opacity(0.2))
-                    .frame(width: 44, height: 44)
-                Text(chart?.sunSign.symbol ?? "...")
-                    .font(.title3)
+                    .fill(AstroTheme.cardBorder)
+                    .frame(width: 40, height: 40)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile.name)
                     .font(.headline)
+                    .foregroundStyle(AstroTheme.cream)
                 if let chart = chart {
                     Text("\(chart.sunSign.symbol) \(chart.sunSign.name) \u{2022} \(chart.moonSign.symbol) \(chart.moonSign.name) \u{2022} \(chart.risingSign.symbol) \(chart.risingSign.name)")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AstroTheme.dimCream)
                 }
             }
         }
@@ -92,9 +108,10 @@ struct FriendDetailView: View {
                         Text(profile.name)
                             .font(.title)
                             .fontWeight(.bold)
+                            .foregroundStyle(AstroTheme.cream)
                         Text(profile.birthLocationName)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AstroTheme.dimCream)
                         BigThreeView(chart: chart)
                     }
 
@@ -105,13 +122,11 @@ struct FriendDetailView: View {
                         ForEach(chart.positions) { pos in
                             PlanetRow(position: pos, house: chart.houseForBody(pos.body))
                             if pos.body != chart.positions.last?.body {
-                                Divider()
+                                Divider().overlay(AstroTheme.cardBorder)
                             }
                         }
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .astroCard()
 
                     if !transits.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
@@ -147,12 +162,20 @@ struct FriendDetailView: View {
                 }
                 .padding()
             } else if isLoading {
-                ProgressView("Calculating chart...")
-                    .padding(.top, 100)
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .tint(AstroTheme.gold)
+                    Text("Calculating chart...")
+                        .font(.subheadline)
+                        .foregroundStyle(AstroTheme.dimCream)
+                }
+                .padding(.top, 100)
             }
         }
+        .background(AstroTheme.deepNavy)
         .navigationTitle(profile.firstName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             Button("Edit") { showingEdit = true }
         }
@@ -190,13 +213,14 @@ struct FriendDetailView: View {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.semibold)
+                .foregroundStyle(AstroTheme.cream)
             Text(text)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AstroTheme.dimCream)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemGray6))
+        .background(AstroTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

@@ -22,18 +22,22 @@ struct CompatibilityView: View {
                     personSelectors
 
                     if isCalculating {
-                        ProgressView("Comparing charts...")
-                            .padding(.top, 40)
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .tint(AstroTheme.gold)
+                            Text("Comparing charts...")
+                                .font(.subheadline)
+                                .foregroundStyle(AstroTheme.dimCream)
+                        }
+                        .padding(.top, 40)
                     } else if let report = report, let c1 = chart1, let c2 = chart2 {
                         HarmonyGauge(value: report.overallHarmony)
 
                         Text(CompatibilityInterpretations.overallMessage(harmony: report.overallHarmony))
                             .font(.subheadline)
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(.secondary)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .foregroundStyle(AstroTheme.dimCream)
+                            .astroCard()
 
                         if let p1 = person1, let p2 = person2 {
                             bigThreeComparison(p1: p1, p2: p2, c1: c1, c2: c2)
@@ -60,24 +64,33 @@ struct CompatibilityView: View {
                               person1?.persistentModelID == person2?.persistentModelID {
                         Text("Pick two different people to compare")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AstroTheme.dimCream)
                             .padding(.top, 40)
                     } else if allProfiles.count < 2 {
-                        ContentUnavailableView(
-                            "Need Two Profiles",
-                            systemImage: "person.2",
-                            description: Text("Add at least one friend to explore compatibility")
-                        )
+                        VStack(spacing: 16) {
+                            Image(systemName: "person.2")
+                                .font(.largeTitle)
+                                .foregroundStyle(AstroTheme.dimCream)
+                            Text("Need Two Profiles")
+                                .font(.headline)
+                                .foregroundStyle(AstroTheme.cream)
+                            Text("Add at least one friend to explore compatibility")
+                                .font(.subheadline)
+                                .foregroundStyle(AstroTheme.dimCream)
+                        }
+                        .padding(40)
                     } else {
                         Text("Select two people above to see their cosmic compatibility")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AstroTheme.dimCream)
                             .padding(.top, 40)
                     }
                 }
                 .padding()
             }
             .navigationTitle("Compatibility")
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .background(AstroTheme.deepNavy)
             .onChange(of: person1?.persistentModelID) { _, _ in
                 Task { await calculateIfReady() }
             }
@@ -91,13 +104,11 @@ struct CompatibilityView: View {
         VStack(spacing: 12) {
             personPicker(label: "Person 1", selection: $person1)
             Image(systemName: "heart.fill")
-                .foregroundStyle(.pink)
+                .foregroundStyle(AstroTheme.copper)
                 .font(.title2)
             personPicker(label: "Person 2", selection: $person2)
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .astroCard()
     }
 
     private func calculateIfReady() async {
@@ -130,6 +141,7 @@ struct CompatibilityView: View {
             Text(label)
                 .font(.subheadline)
                 .fontWeight(.medium)
+                .foregroundStyle(AstroTheme.cream)
                 .frame(width: 70, alignment: .leading)
 
             Picker(label, selection: selection) {
@@ -139,7 +151,7 @@ struct CompatibilityView: View {
                 }
             }
             .pickerStyle(.menu)
-            .tint(.purple)
+            .tint(AstroTheme.gold)
         }
     }
 
@@ -152,33 +164,47 @@ struct CompatibilityView: View {
                 Text(p1.firstName)
                     .font(.caption)
                     .fontWeight(.semibold)
+                    .foregroundStyle(AstroTheme.cream)
                     .frame(maxWidth: .infinity)
                 Text(p2.firstName)
                     .font(.caption)
                     .fontWeight(.semibold)
+                    .foregroundStyle(AstroTheme.cream)
                     .frame(maxWidth: .infinity)
             }
             comparisonRow(label: "Sun", sign1: c1.sunSign, sign2: c2.sunSign)
             comparisonRow(label: "Moon", sign1: c1.moonSign, sign2: c2.moonSign)
             comparisonRow(label: "Rising", sign1: c1.risingSign, sign2: c2.risingSign)
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .astroCard()
     }
 
     private func comparisonRow(label: String, sign1: ZodiacSign, sign2: ZodiacSign) -> some View {
         HStack {
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AstroTheme.dimCream)
                 .frame(width: 60, alignment: .leading)
-            Text("\(sign1.symbol) \(sign1.name)")
-                .font(.caption)
-                .frame(maxWidth: .infinity)
-            Text("\(sign2.symbol) \(sign2.name)")
-                .font(.caption)
-                .frame(maxWidth: .infinity)
+            HStack(spacing: 4) {
+                Image(sign1.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                Text(sign1.name)
+                    .font(.caption)
+                    .foregroundStyle(AstroTheme.cream)
+            }
+            .frame(maxWidth: .infinity)
+            HStack(spacing: 4) {
+                Image(sign2.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                Text(sign2.name)
+                    .font(.caption)
+                    .foregroundStyle(AstroTheme.cream)
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -187,17 +213,16 @@ struct CompatibilityView: View {
             HStack {
                 Text("\(aspect.body1.symbol) \(aspect.type.symbol) \(aspect.body2.symbol)")
                     .font(.subheadline)
+                    .foregroundStyle(AstroTheme.gold)
                 Spacer()
                 Text(aspect.type.name)
                     .font(.caption)
-                    .foregroundStyle(isHarmonious ? .green : .orange)
+                    .foregroundStyle(isHarmonious ? AstroTheme.harmonious : AstroTheme.challenging)
             }
             Text(CompatibilityInterpretations.aspectMeaning(aspect))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AstroTheme.dimCream)
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .astroCard()
     }
 }

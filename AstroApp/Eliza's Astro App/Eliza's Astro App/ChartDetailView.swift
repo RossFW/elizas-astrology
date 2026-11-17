@@ -23,11 +23,19 @@ struct ChartDetailView: View {
                     }
                     .padding()
                 } else if isLoading && user != nil {
-                    ProgressView("Calculating your chart...")
-                        .padding(.top, 100)
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .tint(AstroTheme.gold)
+                        Text("Calculating your chart...")
+                            .font(.subheadline)
+                            .foregroundStyle(AstroTheme.dimCream)
+                    }
+                    .padding(.top, 100)
                 }
             }
             .navigationTitle("My Chart")
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .background(AstroTheme.deepNavy)
             .toolbar {
                 if user != nil {
                     Button("Edit") { showingEdit = true }
@@ -68,13 +76,11 @@ struct ChartDetailView: View {
             ForEach(chart.positions) { pos in
                 PlanetRow(position: pos, house: chart.houseForBody(pos.body))
                 if pos.body != chart.positions.last?.body {
-                    Divider()
+                    Divider().overlay(AstroTheme.cardBorder)
                 }
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .astroCard()
     }
 
     @ViewBuilder
@@ -84,12 +90,10 @@ struct ChartDetailView: View {
                 SectionHeader(title: "Natal Aspects", icon: "line.diagonal")
                 ForEach(chart.aspects.sorted(by: { $0.orb < $1.orb }).prefix(15)) { aspect in
                     AspectRow(aspect: aspect)
-                    Divider()
+                    Divider().overlay(AstroTheme.cardBorder)
                 }
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .astroCard()
         }
     }
 
@@ -100,37 +104,51 @@ struct ChartDetailView: View {
             ForEach([CelestialBody.sun, .moon, .mercury, .venus, .mars], id: \.self) { body in
                 if let pos = chart.position(for: body) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("\(body.symbol) \(body.name) in \(pos.sign.name)")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+                        HStack(spacing: 8) {
+                            Image(pos.sign.imageName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 28, height: 28)
+                            Text("\(body.symbol) \(body.name) in \(pos.sign.name)")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(AstroTheme.cream)
+                        }
                         Text(PlanetSignInterpretations.interpretation(body: body, sign: pos.sign))
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AstroTheme.dimCream)
                         Text("House \(chart.houseForBody(body)): \(HouseDescriptions.description(chart.houseForBody(body)))")
                             .font(.caption2)
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(AstroTheme.gold)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemGray6))
+                    .background(AstroTheme.cardBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Rising Sign: \(chart.risingSign.symbol) \(chart.risingSign.name)")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                HStack(spacing: 8) {
+                    Image(chart.risingSign.imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 28, height: 28)
+                    Text("Rising Sign: \(chart.risingSign.symbol) \(chart.risingSign.name)")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(AstroTheme.cream)
+                }
                 Text(SignDescriptions.description(for: chart.risingSign))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AstroTheme.dimCream)
                 Text("This is the mask you show the world \u{2014} how others first perceive you.")
                     .font(.caption2)
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(AstroTheme.gold)
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.systemGray6))
+            .background(AstroTheme.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -142,7 +160,7 @@ struct ChartDetailView: View {
             Text(user.birthDate.formatted(date: .long, time: user.hasBirthTime ? .shortened : .omitted))
                 .font(.caption)
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(AstroTheme.dimCream)
         .padding(.top)
     }
 }

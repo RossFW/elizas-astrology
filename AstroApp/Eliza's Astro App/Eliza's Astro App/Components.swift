@@ -6,7 +6,7 @@ struct BigThreeView: View {
     let chart: NatalChart
 
     var body: some View {
-        HStack(spacing: 20) {
+        HStack(spacing: 12) {
             signPill(label: "Sun", sign: chart.sunSign)
             signPill(label: "Moon", sign: chart.moonSign)
             signPill(label: "Rising", sign: chart.risingSign)
@@ -14,20 +14,27 @@ struct BigThreeView: View {
     }
 
     private func signPill(label: String, sign: ZodiacSign) -> some View {
-        VStack(spacing: 4) {
-            Text(sign.symbol)
-                .font(.title)
+        VStack(spacing: 6) {
+            Image(sign.imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 48, height: 48)
             Text(sign.name)
                 .font(.caption)
                 .fontWeight(.semibold)
+                .foregroundStyle(AstroTheme.cream)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AstroTheme.dimCream)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(sign.element.color.opacity(0.15))
+        .padding(.vertical, 14)
+        .background(AstroTheme.elementColor(sign.element).opacity(0.15))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(AstroTheme.elementColor(sign.element).opacity(0.3), lineWidth: 0.5)
+        )
     }
 }
 
@@ -41,35 +48,36 @@ struct TransitCard: View {
             HStack {
                 Text(transit.transitingPosition.body.symbol)
                     .font(.title2)
+                    .foregroundStyle(AstroTheme.gold)
                 Text(transit.aspectType.symbol)
                     .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AstroTheme.dimCream)
                 Text(transit.natalPosition.body.symbol)
                     .font(.title2)
+                    .foregroundStyle(AstroTheme.gold)
 
                 Spacer()
 
                 if transit.aspectType.isHarmonious {
                     Image(systemName: "sparkle")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(AstroTheme.harmonious)
                 } else {
                     Image(systemName: "bolt.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AstroTheme.challenging)
                 }
             }
 
             Text("\(transit.transitingPosition.body.name) \(transit.aspectType.name) your \(transit.natalPosition.body.name)")
                 .font(.subheadline)
                 .fontWeight(.semibold)
+                .foregroundStyle(AstroTheme.cream)
 
             Text(TransitInterpretations.interpret(transit))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AstroTheme.dimCream)
                 .lineLimit(4)
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .astroCard()
     }
 }
 
@@ -85,13 +93,14 @@ struct RetrogradeBadge: View {
             Text("Rx")
                 .font(.caption2)
                 .fontWeight(.bold)
-                .foregroundStyle(.red)
+                .foregroundStyle(AstroTheme.challenging)
             Text(info.sign.symbol)
                 .font(.caption)
         }
+        .foregroundStyle(AstroTheme.cream)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Color.red.opacity(0.1))
+        .background(AstroTheme.challenging.opacity(0.15))
         .clipShape(Capsule())
     }
 }
@@ -104,28 +113,31 @@ struct PlanetRow: View {
 
     var body: some View {
         HStack {
-            Text(position.body.symbol)
-                .font(.title2)
-                .frame(width: 36)
+            Image(position.sign.imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(position.body.name)
                     .font(.subheadline)
                     .fontWeight(.medium)
+                    .foregroundStyle(AstroTheme.cream)
                 Text(position.formattedDegree)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AstroTheme.dimCream)
             }
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(position.sign.symbol)
-                    .font(.title3)
+                Text("\(position.sign.symbol) \(position.sign.name)")
+                    .font(.subheadline)
+                    .foregroundStyle(AstroTheme.gold)
                 if let house = house {
                     Text("House \(house)")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AstroTheme.dimCream)
                 }
             }
 
@@ -133,10 +145,10 @@ struct PlanetRow: View {
                 Text("Rx")
                     .font(.caption2)
                     .fontWeight(.bold)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(AstroTheme.challenging)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
-                    .background(Color.red.opacity(0.1))
+                    .background(AstroTheme.challenging.opacity(0.15))
                     .clipShape(Capsule())
             }
         }
@@ -153,20 +165,23 @@ struct AspectRow: View {
         HStack {
             Text(aspect.body1.symbol)
                 .font(.title3)
+                .foregroundStyle(AstroTheme.gold)
             Text(aspect.type.symbol)
                 .font(.caption)
-                .foregroundStyle(aspect.type.isHarmonious ? .green : .orange)
+                .foregroundStyle(aspect.type.isHarmonious ? AstroTheme.harmonious : AstroTheme.challenging)
             Text(aspect.body2.symbol)
                 .font(.title3)
+                .foregroundStyle(AstroTheme.gold)
 
             Spacer()
 
             VStack(alignment: .trailing) {
                 Text(aspect.type.name)
                     .font(.caption)
+                    .foregroundStyle(AstroTheme.cream)
                 Text(String(format: "%.1f\u{00B0} orb", aspect.orb))
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AstroTheme.dimCream)
             }
         }
     }
@@ -181,9 +196,10 @@ struct SectionHeader: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .foregroundStyle(.purple)
+                .foregroundStyle(AstroTheme.gold)
             Text(title)
                 .fontWeight(.semibold)
+                .foregroundStyle(AstroTheme.cream)
         }
         .font(.headline)
     }
@@ -196,9 +212,9 @@ struct HarmonyGauge: View {
 
     var color: Color {
         switch value {
-        case 70...: .green
-        case 40..<70: .yellow
-        default: .orange
+        case 70...: AstroTheme.harmonious
+        case 40..<70: AstroTheme.warmGold
+        default: AstroTheme.challenging
         }
     }
 
@@ -206,7 +222,7 @@ struct HarmonyGauge: View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .stroke(Color(.systemGray5), lineWidth: 10)
+                    .stroke(AstroTheme.cardBorder, lineWidth: 10)
                 Circle()
                     .trim(from: 0, to: value / 100)
                     .stroke(color, style: StrokeStyle(lineWidth: 10, lineCap: .round))
@@ -215,9 +231,10 @@ struct HarmonyGauge: View {
                     Text("\(Int(value))")
                         .font(.title)
                         .fontWeight(.bold)
+                        .foregroundStyle(AstroTheme.cream)
                     Text("harmony")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AstroTheme.dimCream)
                 }
             }
             .frame(width: 100, height: 100)
