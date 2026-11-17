@@ -13,10 +13,13 @@ struct ElizasAstrologyApp: App {
 
 struct RootView: View {
     @Query(filter: #Predicate<Profile> { $0.isUser }) private var userProfiles: [Profile]
+    @State private var onboardingComplete = false
 
     var body: some View {
-        if userProfiles.isEmpty {
-            ProfileSetupView(isOnboarding: true)
+        if userProfiles.isEmpty && !onboardingComplete {
+            ProfileSetupView(isOnboarding: true, onOnboardingComplete: {
+                onboardingComplete = true
+            })
         } else {
             MainTabView()
         }

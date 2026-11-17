@@ -4,22 +4,16 @@ import SwiftData
 struct HomeView: View {
     @Query(filter: #Predicate<Profile> { $0.isUser }) private var userProfiles: [Profile]
 
+    @State private var chart: NatalChart?
+    @State private var report: WeeklyTransitReport?
+    @State private var isLoading = true
+
     private var user: Profile? { userProfiles.first }
-
-    private var chart: NatalChart? {
-        guard let user = user else { return nil }
-        return ChartCalculator.calculateChart(for: user)
-    }
-
-    private var weeklyReport: WeeklyTransitReport? {
-        guard let chart = chart else { return nil }
-        return TransitEngine.weeklyReport(for: chart)
-    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                if let user = user, let chart = chart, let report = weeklyReport {
+                if let user = user, let chart = chart, let report = report {
                     VStack(spacing: 24) {
                         greetingSection(user: user)
                         bigThreeSection(chart: chart)
@@ -28,17 +22,39 @@ struct HomeView: View {
                         moonSection(report: report)
                     }
                     .padding()
-                } else {
-                    ContentUnavailableView(
-                        "Set Up Your Profile",
-                        systemImage: "person.crop.circle.badge.plus",
-                        description: Text("Add your birth info to see your cosmic forecast")
-                    )
+                } else if isLoading && user != nil {
+                    ProgressView("Reading the stars...")
+                        .padding(.top, 100)
                 }
             }
             .navigationTitle("Home")
             .background(Color(.systemGroupedBackground))
+            .task(id: user?.birthDate) {
+                await loadChart()
+            }
         }
+    }
+
+    private func loadChart() async {
+        guard let user = user else {
+            isLoading = false
+            return
+        }
+        isLoading = true
+
+        let birthDate = user.birthDate
+        let lat = user.birthLatitude
+        let lon = user.birthLongitude
+
+        let c = await ChartCache.shared.chart(date: birthDate, latitude: lat, longitude: lon)
+        if Task.isCancelled { return }
+
+        let r = await ChartCache.shared.weeklyReport(for: c, latitude: lat, longitude: lon)
+        if Task.isCancelled { return }
+
+        chart = c
+        report = r
+        isLoading = false
     }
 
     private func greetingSection(user: Profile) -> some View {

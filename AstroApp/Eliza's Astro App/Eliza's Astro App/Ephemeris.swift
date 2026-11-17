@@ -5,21 +5,21 @@ import Foundation
 private let deg2rad = Double.pi / 180.0
 private let rad2deg = 180.0 / Double.pi
 
-private func normalizeAngle(_ angle: Double) -> Double {
+private nonisolated func normalizeAngle(_ angle: Double) -> Double {
     var a = angle.truncatingRemainder(dividingBy: 360.0)
     if a < 0 { a += 360.0 }
     return a
 }
 
-private func sinDeg(_ deg: Double) -> Double { sin(deg * deg2rad) }
-private func cosDeg(_ deg: Double) -> Double { cos(deg * deg2rad) }
-private func tanDeg(_ deg: Double) -> Double { tan(deg * deg2rad) }
-private func asinDeg(_ x: Double) -> Double { asin(x) * rad2deg }
-private func atan2Deg(_ y: Double, _ x: Double) -> Double { atan2(y, x) * rad2deg }
+private nonisolated func sinDeg(_ deg: Double) -> Double { sin(deg * deg2rad) }
+private nonisolated func cosDeg(_ deg: Double) -> Double { cos(deg * deg2rad) }
+private nonisolated func tanDeg(_ deg: Double) -> Double { tan(deg * deg2rad) }
+private nonisolated func asinDeg(_ x: Double) -> Double { asin(x) * rad2deg }
+private nonisolated func atan2Deg(_ y: Double, _ x: Double) -> Double { atan2(y, x) * rad2deg }
 
 // MARK: - Julian Date
 
-enum JulianDate {
+nonisolated enum JulianDate {
     static func fromDate(year: Int, month: Int, day: Double) -> Double {
         var y = Double(year)
         var m = Double(month)
@@ -36,11 +36,11 @@ enum JulianDate {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "UTC")!
         let comps = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
-        let day = Double(comps.day!) +
-            Double(comps.hour!) / 24.0 +
-            Double(comps.minute!) / 1440.0 +
-            Double(comps.second!) / 86400.0
-        return fromDate(year: comps.year!, month: comps.month!, day: day)
+        let day = Double(comps.day ?? 1) +
+            Double(comps.hour ?? 0) / 24.0 +
+            Double(comps.minute ?? 0) / 1440.0 +
+            Double(comps.second ?? 0) / 86400.0
+        return fromDate(year: comps.year ?? 2000, month: comps.month ?? 1, day: day)
     }
 
     static func centuriesFromJ2000(_ jd: Double) -> Double {
@@ -50,13 +50,13 @@ enum JulianDate {
 
 // MARK: - Obliquity of Ecliptic
 
-private func meanObliquity(T: Double) -> Double {
+private nonisolated func meanObliquity(T: Double) -> Double {
     23.439291 - 0.0130042 * T - 1.64e-7 * T * T + 5.04e-7 * T * T * T
 }
 
 // MARK: - Nutation
 
-private func nutation(T: Double) -> (longitude: Double, obliquity: Double) {
+private nonisolated func nutation(T: Double) -> (longitude: Double, obliquity: Double) {
     let omega = 125.04452 - 1934.136261 * T
     let L0 = 280.4665 + 36000.7698 * T
     let Lp = 218.3165 + 481267.8813 * T
@@ -69,20 +69,20 @@ private func nutation(T: Double) -> (longitude: Double, obliquity: Double) {
 
 // MARK: - Sidereal Time
 
-private func greenwichMeanSiderealTime(jd: Double) -> Double {
+private nonisolated func greenwichMeanSiderealTime(jd: Double) -> Double {
     let T = JulianDate.centuriesFromJ2000(jd)
-    var gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) +
+    let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) +
                0.000387933 * T * T - T * T * T / 38710000.0
     return normalizeAngle(gmst)
 }
 
-private func localSiderealTime(jd: Double, longitude: Double) -> Double {
+private nonisolated func localSiderealTime(jd: Double, longitude: Double) -> Double {
     normalizeAngle(greenwichMeanSiderealTime(jd: jd) + longitude)
 }
 
 // MARK: - Sun Position (Meeus Ch. 25)
 
-enum SunCalculator {
+nonisolated enum SunCalculator {
     static func position(jd: Double) -> (longitude: Double, meanAnomaly: Double) {
         let T = JulianDate.centuriesFromJ2000(jd)
         let L0 = normalizeAngle(280.46646 + 36000.76983 * T + 0.0003032 * T * T)
@@ -99,7 +99,7 @@ enum SunCalculator {
 
 // MARK: - Moon Position (Meeus Ch. 47)
 
-enum MoonCalculator {
+nonisolated enum MoonCalculator {
     static func longitude(jd: Double) -> Double {
         let T = JulianDate.centuriesFromJ2000(jd)
         let Lp = normalizeAngle(218.3164477 + 481267.88123421 * T -
@@ -172,7 +172,7 @@ enum MoonCalculator {
 
 // MARK: - Planet Positions (Keplerian Elements + Kepler Equation)
 
-private struct OrbitalElements {
+private struct OrbitalElements: Sendable {
     let L: Double    // mean longitude (degrees)
     let a: Double    // semi-major axis (AU)
     let e: Double    // eccentricity
@@ -181,7 +181,7 @@ private struct OrbitalElements {
     let pi: Double   // longitude of perihelion (degrees)
 }
 
-private struct OrbitalElementRates {
+private struct OrbitalElementRates: Sendable {
     let L0: Double, dL: Double
     let a0: Double, da: Double
     let e0: Double, de: Double
@@ -189,7 +189,7 @@ private struct OrbitalElementRates {
     let omega0: Double, dOmega: Double
     let pi0: Double, dPi: Double
 
-    func at(T: Double) -> OrbitalElements {
+    nonisolated func at(T: Double) -> OrbitalElements {
         OrbitalElements(
             L: normalizeAngle(L0 + dL * T),
             a: a0 + da * T,
@@ -280,7 +280,7 @@ private let earthElements = OrbitalElementRates(
 )
 
 // Solve Kepler's equation: M = E - e*sin(E), return E in radians
-private func solveKepler(M: Double, e: Double) -> Double {
+private nonisolated func solveKepler(M: Double, e: Double) -> Double {
     let Mrad = M * deg2rad
     var E = Mrad + e * sin(Mrad)
     for _ in 0..<30 {
@@ -292,7 +292,7 @@ private func solveKepler(M: Double, e: Double) -> Double {
 }
 
 // Compute heliocentric ecliptic Cartesian coordinates from orbital elements
-private func heliocentricPosition(_ elems: OrbitalElements) -> (x: Double, y: Double, z: Double) {
+private nonisolated func heliocentricPosition(_ elems: OrbitalElements) -> (x: Double, y: Double, z: Double) {
     let M = normalizeAngle(elems.L - elems.pi)
     let E = solveKepler(M: M, e: elems.e)
 
@@ -324,7 +324,7 @@ private func heliocentricPosition(_ elems: OrbitalElements) -> (x: Double, y: Do
     return (x, y, z)
 }
 
-enum PlanetCalculator {
+nonisolated enum PlanetCalculator {
     static func geocentricLongitude(body: CelestialBody, jd: Double) -> Double {
         let T = JulianDate.centuriesFromJ2000(jd)
 
@@ -353,7 +353,7 @@ enum PlanetCalculator {
 
 // MARK: - North Node (Mean)
 
-enum NorthNodeCalculator {
+nonisolated enum NorthNodeCalculator {
     static func longitude(jd: Double) -> Double {
         let T = JulianDate.centuriesFromJ2000(jd)
         return normalizeAngle(125.04452 - 1934.136261 * T +
@@ -363,7 +363,7 @@ enum NorthNodeCalculator {
 
 // MARK: - Ascendant & Midheaven
 
-enum AnglesCalculator {
+nonisolated enum AnglesCalculator {
     static func calculate(jd: Double, latitude: Double, longitude: Double)
         -> (ascendant: Double, midheaven: Double)
     {
@@ -392,15 +392,118 @@ enum AnglesCalculator {
     }
 }
 
+// MARK: - Placidus House Cusps
+
+nonisolated enum PlacidusCalculator {
+    /// Calculate all 12 Placidus house cusps (ecliptic longitudes, 0-360°).
+    /// Index 0 = House 1 (ASC), index 9 = House 10 (MC), etc.
+    static func houseCusps(
+        ascendant: Double, midheaven: Double,
+        obliquity: Double, latitude: Double, ramc: Double
+    ) -> [Double] {
+        var cusps = Array(repeating: 0.0, count: 12)
+
+        // Fixed cusps from angles
+        cusps[0] = ascendant                                  // House 1 = ASC
+        cusps[3] = normalizeAngle(midheaven + 180.0)          // House 4 = IC
+        cusps[6] = normalizeAngle(ascendant + 180.0)          // House 7 = DESC
+        cusps[9] = midheaven                                  // House 10 = MC
+
+        // Intermediate cusps via iterative Placidus method
+        // Above horizon: houses 11, 12 (fractions 1/3 and 2/3 of diurnal semi-arc from MC)
+        cusps[10] = iterateCusp(ramc: ramc, obliquity: obliquity,
+                                latitude: latitude, fraction: 1.0 / 3.0, aboveHorizon: true)
+        cusps[11] = iterateCusp(ramc: ramc, obliquity: obliquity,
+                                latitude: latitude, fraction: 2.0 / 3.0, aboveHorizon: true)
+
+        // Below horizon: houses 2, 3 (fractions 1/3 and 2/3 of nocturnal semi-arc from IC)
+        cusps[1] = iterateCusp(ramc: ramc, obliquity: obliquity,
+                               latitude: latitude, fraction: 1.0 / 3.0, aboveHorizon: false)
+        cusps[2] = iterateCusp(ramc: ramc, obliquity: obliquity,
+                               latitude: latitude, fraction: 2.0 / 3.0, aboveHorizon: false)
+
+        // Opposite cusps
+        cusps[4] = normalizeAngle(cusps[10] + 180.0)   // House 5 opposite House 11
+        cusps[5] = normalizeAngle(cusps[11] + 180.0)   // House 6 opposite House 12
+        cusps[7] = normalizeAngle(cusps[1] + 180.0)    // House 8 opposite House 2
+        cusps[8] = normalizeAngle(cusps[2] + 180.0)    // House 9 opposite House 3
+
+        return cusps
+    }
+
+    /// Iteratively find the ecliptic longitude for a Placidus cusp.
+    private static func iterateCusp(
+        ramc: Double, obliquity: Double, latitude: Double,
+        fraction: Double, aboveHorizon: Bool
+    ) -> Double {
+        let epsRad = obliquity * deg2rad
+        let latRad = latitude * deg2rad
+
+        // Starting RA guess
+        var ra: Double
+        if aboveHorizon {
+            ra = normalizeAngle(ramc + fraction * 90.0)
+        } else {
+            ra = normalizeAngle(ramc + 180.0 + fraction * 90.0)
+        }
+
+        for _ in 0..<50 {
+            // Convert RA to ecliptic longitude (point on ecliptic)
+            let raRad = ra * deg2rad
+            let lonRad = atan2(sin(raRad), cos(raRad) * cos(epsRad))
+            let lon = normalizeAngle(lonRad * rad2deg)
+
+            // Declination of this ecliptic longitude
+            let dec = asin(sin(epsRad) * sin(lon * deg2rad))
+
+            // Diurnal semi-arc
+            let tanProd = tan(latRad) * tan(dec)
+            let dsa: Double
+            if abs(tanProd) >= 1.0 {
+                dsa = tanProd > 0 ? 180.0 : 0.0
+            } else {
+                dsa = acos(-tanProd) * rad2deg
+            }
+
+            let nsa = 180.0 - dsa
+
+            // Required RA for this cusp
+            let requiredRA: Double
+            if aboveHorizon {
+                requiredRA = normalizeAngle(ramc + fraction * dsa)
+            } else {
+                requiredRA = normalizeAngle(ramc + 180.0 + fraction * nsa)
+            }
+
+            // Check convergence
+            var diff = requiredRA - ra
+            if diff > 180 { diff -= 360 }
+            if diff < -180 { diff += 360 }
+
+            ra = normalizeAngle(requiredRA)
+
+            if abs(diff) < 0.0001 {
+                break
+            }
+        }
+
+        // Convert final RA to ecliptic longitude
+        let raRad = ra * deg2rad
+        let lonRad = atan2(sin(raRad), cos(raRad) * cos(epsRad))
+        return normalizeAngle(lonRad * rad2deg)
+    }
+}
+
 // MARK: - Public Interface
 
 struct EphemerisResult {
     let positions: [CelestialPosition]
     let ascendant: Double
     let midheaven: Double
+    let houseCusps: [Double]  // 12 Placidus house cusps (index 0 = House 1)
 }
 
-enum Ephemeris {
+nonisolated enum Ephemeris {
     static func calculate(date: Date, latitude: Double, longitude: Double) -> EphemerisResult {
         let jd = JulianDate.fromDate(date)
         return calculate(jd: jd, latitude: latitude, longitude: longitude)
@@ -432,7 +535,19 @@ enum Ephemeris {
         // Angles
         let angles = AnglesCalculator.calculate(jd: jd, latitude: latitude, longitude: longitude)
 
-        return EphemerisResult(positions: positions, ascendant: angles.ascendant, midheaven: angles.midheaven)
+        // Placidus house cusps
+        let T = JulianDate.centuriesFromJ2000(jd)
+        let eps = meanObliquity(T: T)
+        let nut = nutation(T: T)
+        let trueObliquity = eps + nut.obliquity
+        let lst = localSiderealTime(jd: jd, longitude: longitude)
+
+        let cusps = PlacidusCalculator.houseCusps(
+            ascendant: angles.ascendant, midheaven: angles.midheaven,
+            obliquity: trueObliquity, latitude: latitude, ramc: lst
+        )
+
+        return EphemerisResult(positions: positions, ascendant: angles.ascendant, midheaven: angles.midheaven, houseCusps: cusps)
     }
 
     static func currentPositions() -> [CelestialPosition] {

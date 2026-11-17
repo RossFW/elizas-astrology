@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Chart Calculator
 
-enum ChartCalculator {
+nonisolated enum ChartCalculator {
     static func calculateChart(date: Date, latitude: Double, longitude: Double) -> NatalChart {
         let result = Ephemeris.calculate(date: date, latitude: latitude, longitude: longitude)
         let aspects = AspectCalculator.findAspects(positions: result.positions)
@@ -11,7 +11,8 @@ enum ChartCalculator {
             positions: result.positions,
             ascendantLongitude: result.ascendant,
             midheavenLongitude: result.midheaven,
-            aspects: aspects
+            aspects: aspects,
+            houseCusps: result.houseCusps
         )
     }
 
@@ -26,7 +27,7 @@ enum ChartCalculator {
 
 // MARK: - Aspect Calculator
 
-enum AspectCalculator {
+nonisolated enum AspectCalculator {
     static func findAspects(positions: [CelestialPosition], orbs: [AspectType: Double]? = nil) -> [ChartAspect] {
         var aspects: [ChartAspect] = []
 
@@ -108,13 +109,13 @@ struct WeeklyTransitReport {
     }
 }
 
-enum TransitEngine {
+nonisolated enum TransitEngine {
     static func currentTransits(for chart: NatalChart) -> [Transit] {
         let currentPositions = Ephemeris.currentPositions()
         return findTransits(transitPositions: currentPositions, natalChart: chart)
     }
 
-    static func weeklyReport(for chart: NatalChart) -> WeeklyTransitReport {
+    static func weeklyReport(for chart: NatalChart, latitude: Double = 0, longitude: Double = 0) -> WeeklyTransitReport {
         let calendar = Calendar.current
         let now = Date()
 
@@ -130,7 +131,7 @@ enum TransitEngine {
         let midweek = calendar.date(byAdding: .day, value: 3, to: weekStart)!
         let jd = JulianDate.fromDate(midweek)
         let transitPositions = Ephemeris.calculate(
-            jd: jd, latitude: 0, longitude: 0
+            jd: jd, latitude: latitude, longitude: longitude
         ).positions
 
         let transits = findTransits(transitPositions: transitPositions, natalChart: chart)
@@ -227,7 +228,7 @@ struct SynastryReport {
     }
 }
 
-enum SynastryCalculator {
+nonisolated enum SynastryCalculator {
     static func compare(chart1: NatalChart, chart2: NatalChart) -> SynastryReport {
         let aspects = AspectCalculator.findAspectsBetween(
             transitPositions: chart1.positions,

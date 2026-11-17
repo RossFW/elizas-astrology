@@ -5,35 +5,28 @@ struct CompatibilityView: View {
     @Query private var allProfiles: [Profile]
     @State private var person1: Profile?
     @State private var person2: Profile?
+    @State private var report: SynastryReport?
+    @State private var chart1: NatalChart?
+    @State private var chart2: NatalChart?
+    @State private var isCalculating = false
 
-    private var report: SynastryReport? {
-        guard let p1 = person1, let p2 = person2, p1 !== p2 else { return nil }
-        let chart1 = ChartCalculator.calculateChart(for: p1)
-        let chart2 = ChartCalculator.calculateChart(for: p2)
-        return SynastryCalculator.compare(chart1: chart1, chart2: chart2)
+    private var bothSelected: Bool {
+        person1 != nil && person2 != nil &&
+        person1?.persistentModelID != person2?.persistentModelID
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Person selectors
-                    VStack(spacing: 12) {
-                        personPicker(label: "Person 1", selection: $person1)
-                        Image(systemName: "heart.fill")
-                            .foregroundStyle(.pink)
-                            .font(.title2)
-                        personPicker(label: "Person 2", selection: $person2)
-                    }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    personSelectors
 
-                    if let report = report {
-                        // Harmony gauge
+                    if isCalculating {
+                        ProgressView("Comparing charts...")
+                            .padding(.top, 40)
+                    } else if let report = report, let c1 = chart1, let c2 = chart2 {
                         HarmonyGauge(value: report.overallHarmony)
 
-                        // Overall interpretation
                         Text(CompatibilityInterpretations.overallMessage(harmony: report.overallHarmony))
                             .font(.subheadline)
                             .multilineTextAlignment(.center)
@@ -42,12 +35,10 @@ struct CompatibilityView: View {
                             .background(Color(.systemGray6))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                        // Big three comparison
                         if let p1 = person1, let p2 = person2 {
-                            bigThreeComparison(p1: p1, p2: p2)
+                            bigThreeComparison(p1: p1, p2: p2, c1: c1, c2: c2)
                         }
 
-                        // Harmonious aspects
                         if !report.harmonious.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
                                 SectionHeader(title: "What Flows", icon: "sparkle")
@@ -57,7 +48,6 @@ struct CompatibilityView: View {
                             }
                         }
 
-                        // Challenging aspects
                         if !report.challenging.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
                                 SectionHeader(title: "Growth Edges", icon: "bolt.fill")
@@ -66,10 +56,12 @@ struct CompatibilityView: View {
                                 }
                             }
                         }
-                    } else if person1 != nil && person2 != nil && person1 === person2 {
+                    } else if person1 != nil && person2 != nil &&
+                              person1?.persistentModelID == person2?.persistentModelID {
                         Text("Pick two different people to compare")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .padding(.top, 40)
                     } else if allProfiles.count < 2 {
                         ContentUnavailableView(
                             "Need Two Profiles",
@@ -86,7 +78,51 @@ struct CompatibilityView: View {
                 .padding()
             }
             .navigationTitle("Compatibility")
+            .onChange(of: person1?.persistentModelID) { _, _ in
+                Task { await calculateIfReady() }
+            }
+            .onChange(of: person2?.persistentModelID) { _, _ in
+                Task { await calculateIfReady() }
+            }
         }
+    }
+
+    private var personSelectors: some View {
+        VStack(spacing: 12) {
+            personPicker(label: "Person 1", selection: $person1)
+            Image(systemName: "heart.fill")
+                .foregroundStyle(.pink)
+                .font(.title2)
+            personPicker(label: "Person 2", selection: $person2)
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func calculateIfReady() async {
+        guard bothSelected, let p1 = person1, let p2 = person2 else {
+            report = nil
+            chart1 = nil
+            chart2 = nil
+            return
+        }
+
+        isCalculating = true
+
+        let c1 = await ChartCache.shared.chart(
+            date: p1.birthDate, latitude: p1.birthLatitude, longitude: p1.birthLongitude
+        )
+        let c2 = await ChartCache.shared.chart(
+            date: p2.birthDate, latitude: p2.birthLatitude, longitude: p2.birthLongitude
+        )
+
+        let r = SynastryCalculator.compare(chart1: c1, chart2: c2)
+
+        chart1 = c1
+        chart2 = c2
+        report = r
+        isCalculating = false
     }
 
     private func personPicker(label: String, selection: Binding<Profile?>) -> some View {
@@ -107,11 +143,8 @@ struct CompatibilityView: View {
         }
     }
 
-    private func bigThreeComparison(p1: Profile, p2: Profile) -> some View {
-        let c1 = ChartCalculator.calculateChart(for: p1)
-        let c2 = ChartCalculator.calculateChart(for: p2)
-
-        return VStack(spacing: 12) {
+    private func bigThreeComparison(p1: Profile, p2: Profile, c1: NatalChart, c2: NatalChart) -> some View {
+        VStack(spacing: 12) {
             SectionHeader(title: "Big Three Comparison", icon: "person.2.fill")
             HStack {
                 Text("")

@@ -4,10 +4,10 @@ struct ChartWheelView: View {
     let chart: NatalChart
     let size: CGFloat
 
-    private let signColors: [Color] = [
-        .red, .green, .yellow, .blue, .red, .green,
-        .yellow, .blue, .red, .green, .yellow, .blue,
-    ]
+    private func signColor(_ index: Int) -> Color {
+        guard let sign = ZodiacSign(rawValue: index) else { return .gray }
+        return sign.element.color
+    }
 
     var body: some View {
         Canvas { context, canvasSize in
@@ -30,7 +30,7 @@ struct ChartWheelView: View {
                     p.closeSubpath()
                 }
 
-                context.fill(path, with: .color(signColors[i].opacity(0.2)))
+                context.fill(path, with: .color(signColor(i).opacity(0.2)))
                 context.stroke(path, with: .color(.gray.opacity(0.3)), lineWidth: 0.5)
 
                 // Sign symbol
@@ -40,25 +40,29 @@ struct ChartWheelView: View {
 
                 if let sign = ZodiacSign(rawValue: i) {
                     let text = Text(sign.symbol).font(.system(size: outerRadius * 0.09))
-                    context.draw(text.foregroundStyle(signColors[i]), at: symbolPoint)
+                    context.draw(text.foregroundStyle(signColor(i)), at: symbolPoint)
                 }
             }
 
-            // Draw house lines
+            // Draw Placidus house lines
             for i in 0..<12 {
-                let houseLon = Double(chart.ascendantSign.rawValue) * 30 + Double(i) * 30
-                let angle = houseLon - Double(chart.ascendantLongitude)
+                let cuspLon = chart.cusp(for: i + 1)
+                let angle = cuspLon - chart.ascendantLongitude
+                let isAngular = (i == 0 || i == 3 || i == 6 || i == 9) // ASC, IC, DESC, MC
                 let start = pointOnCircle(center: center, radius: middleRadius, angleDeg: angle)
                 let end = pointOnCircle(center: center, radius: innerRadius, angleDeg: angle)
 
                 var line = Path()
                 line.move(to: start)
                 line.addLine(to: end)
-                context.stroke(line, with: .color(.gray.opacity(0.4)), lineWidth: i == 0 ? 2 : 0.5)
+                context.stroke(line, with: .color(.gray.opacity(isAngular ? 0.7 : 0.4)),
+                               lineWidth: isAngular ? 1.5 : 0.5)
 
-                // House number
-                let midHouseAngle = angle + 15
-                let houseNumPoint = pointOnCircle(center: center, radius: innerRadius * 0.8, angleDeg: midHouseAngle)
+                // House number — place between this cusp and the next
+                let nextCuspLon = chart.cusp(for: (i % 12) + 2)
+                var midAngle = cuspLon + angularDistance(from: cuspLon, to: nextCuspLon) / 2.0
+                midAngle = midAngle - chart.ascendantLongitude
+                let houseNumPoint = pointOnCircle(center: center, radius: innerRadius * 0.8, angleDeg: midAngle)
                 let houseText = Text("\(i + 1)").font(.system(size: outerRadius * 0.06)).foregroundStyle(.secondary)
                 context.draw(houseText, at: houseNumPoint)
             }
@@ -120,6 +124,14 @@ struct ChartWheelView: View {
             context.draw(mcText, at: mcPoint)
         }
         .frame(width: size, height: size)
+    }
+
+    /// Shortest forward (counter-clockwise) angular distance on 0-360 circle.
+    private func angularDistance(from a: Double, to b: Double) -> Double {
+        var d = b - a
+        while d < 0 { d += 360 }
+        while d >= 360 { d -= 360 }
+        return d
     }
 
     private func pointOnCircle(center: CGPoint, radius: CGFloat, angleDeg: Double) -> CGPoint {

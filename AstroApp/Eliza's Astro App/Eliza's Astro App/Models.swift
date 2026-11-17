@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Element & Modality
 
-enum Element: String, CaseIterable, Codable {
+nonisolated enum Element: String, CaseIterable, Codable, Sendable {
     case fire, earth, air, water
 
     var color: Color {
@@ -16,13 +16,13 @@ enum Element: String, CaseIterable, Codable {
     }
 }
 
-enum Modality: String, CaseIterable, Codable {
+nonisolated enum Modality: String, CaseIterable, Codable, Sendable {
     case cardinal, fixed, mutable
 }
 
 // MARK: - Zodiac Signs
 
-enum ZodiacSign: Int, CaseIterable, Codable, Identifiable {
+nonisolated enum ZodiacSign: Int, CaseIterable, Codable, Identifiable, Sendable {
     case aries = 0, taurus, gemini, cancer, leo, virgo
     case libra, scorpio, sagittarius, capricorn, aquarius, pisces
 
@@ -105,7 +105,7 @@ enum ZodiacSign: Int, CaseIterable, Codable, Identifiable {
 
 // MARK: - Celestial Bodies
 
-enum CelestialBody: String, CaseIterable, Codable, Identifiable {
+nonisolated enum CelestialBody: String, CaseIterable, Codable, Identifiable, Sendable {
     case sun, moon, mercury, venus, mars
     case jupiter, saturn, uranus, neptune, pluto
     case northNode
@@ -156,7 +156,7 @@ enum CelestialBody: String, CaseIterable, Codable, Identifiable {
 
 // MARK: - Aspects
 
-enum AspectType: String, CaseIterable, Codable, Identifiable {
+nonisolated enum AspectType: String, CaseIterable, Codable, Identifiable, Sendable {
     case conjunction, sextile, square, trine, opposition
 
     var id: String { rawValue }
@@ -214,7 +214,7 @@ enum AspectType: String, CaseIterable, Codable, Identifiable {
 
 // MARK: - Position & Chart Structures
 
-struct CelestialPosition: Codable, Identifiable {
+struct CelestialPosition: Codable, Identifiable, Sendable {
     var id: String { body.rawValue }
     let body: CelestialBody
     let longitude: Double
@@ -239,7 +239,7 @@ struct CelestialPosition: Codable, Identifiable {
     }
 }
 
-struct ChartAspect: Codable, Identifiable {
+struct ChartAspect: Codable, Identifiable, Sendable {
     let id: UUID
     let body1: CelestialBody
     let body2: CelestialBody
@@ -257,11 +257,12 @@ struct ChartAspect: Codable, Identifiable {
     }
 }
 
-struct NatalChart: Codable {
+struct NatalChart: Codable, Sendable {
     let positions: [CelestialPosition]
     let ascendantLongitude: Double
     let midheavenLongitude: Double
     let aspects: [ChartAspect]
+    let houseCusps: [Double]  // 12 Placidus cusps; index 0 = House 1 (ASC)
 
     var ascendantSign: ZodiacSign { .from(longitude: ascendantLongitude) }
     var midheavenSign: ZodiacSign { .from(longitude: midheavenLongitude) }
@@ -274,23 +275,40 @@ struct NatalChart: Codable {
     var moonSign: ZodiacSign { position(for: .moon)?.sign ?? .aries }
     var risingSign: ZodiacSign { ascendantSign }
 
-    // Whole Sign houses: house 1 = rising sign, house 2 = next sign, etc.
+    /// Placidus house for an ecliptic longitude (1-12).
     func house(for longitude: Double) -> Int {
-        let ascSignStart = Double(ascendantSign.rawValue) * 30.0
-        var offset = longitude - ascSignStart
-        if offset < 0 { offset += 360.0 }
-        return (Int(offset / 30.0) % 12) + 1
+        guard houseCusps.count == 12 else { return 1 }
+        // Walk cusps in order; a planet is in house N if it falls between cusp N and cusp N+1
+        for i in 0..<12 {
+            let next = (i + 1) % 12
+            let cuspStart = houseCusps[i]
+            let cuspEnd = houseCusps[next]
+
+            if cuspStart <= cuspEnd {
+                if longitude >= cuspStart && longitude < cuspEnd { return i + 1 }
+            } else {
+                // Wraps around 0°
+                if longitude >= cuspStart || longitude < cuspEnd { return i + 1 }
+            }
+        }
+        return 1
     }
 
     func houseForBody(_ body: CelestialBody) -> Int {
         guard let pos = position(for: body) else { return 1 }
         return house(for: pos.longitude)
     }
+
+    /// Ecliptic longitude of a house cusp (1-12).
+    func cusp(for house: Int) -> Double {
+        guard houseCusps.count == 12 else { return 0 }
+        return houseCusps[(house - 1) % 12]
+    }
 }
 
 // MARK: - Transits & Retrogrades
 
-struct Transit: Identifiable {
+struct Transit: Identifiable, Sendable {
     let id = UUID()
     let transitingPosition: CelestialPosition
     let natalPosition: CelestialPosition
@@ -299,7 +317,7 @@ struct Transit: Identifiable {
     let isApplying: Bool
     let houseAffected: Int
 
-    var significance: Int {
+    nonisolated var significance: Int {
         var score = 0
         if transitingPosition.body.isOuter { score += 3 }
         if transitingPosition.body.isSocial { score += 2 }
@@ -312,7 +330,7 @@ struct Transit: Identifiable {
     }
 }
 
-struct RetrogradeInfo: Identifiable {
+struct RetrogradeInfo: Identifiable, Sendable {
     let id = UUID()
     let body: CelestialBody
     let sign: ZodiacSign

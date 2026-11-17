@@ -15,6 +15,9 @@ build/
 !default.perspectivev3
 xcuserdata/
 
+# Screenshots
+.claude/screenshots/
+
 # macOS
 .DS_Store
 .AppleDouble
