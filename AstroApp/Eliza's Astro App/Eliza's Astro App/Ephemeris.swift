@@ -386,7 +386,14 @@ nonisolated enum AnglesCalculator {
             -cos(lstRad),
             sin(lstRad) * cos(epsRad) + tan(latRad) * sin(epsRad)
         )
-        let asc = normalizeAngle(ascRad * rad2deg)
+        var asc = normalizeAngle(ascRad * rad2deg)
+
+        // Correct atan2 quadrant ambiguity: ASC must be on the opposite
+        // side of the ecliptic from MC (roughly MC + 90°..270°).
+        // If atan2 gave the Descendant instead, flip by 180°.
+        if normalizeAngle(asc - mc) > 180.0 {
+            asc = normalizeAngle(asc + 180.0)
+        }
 
         return (asc, mc)
     }

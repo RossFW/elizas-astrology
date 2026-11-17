@@ -2,6 +2,7 @@ import Testing
 import Foundation
 @testable import Eliza_s_Astro_App
 
+@Suite(.serialized) nonisolated
 struct ChartCalculationTests {
 
     // MARK: - ZodiacSign

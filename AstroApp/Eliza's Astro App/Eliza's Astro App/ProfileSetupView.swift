@@ -34,101 +34,100 @@ struct ProfileSetupView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                Form {
-                    if isOnboarding {
-                        Section {
-                            VStack(spacing: 8) {
-                                Text("Welcome to the cosmos")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                Text("Enter your birth details to calculate your natal chart. The more precise, the more accurate your readings.")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                            .listRowBackground(Color.clear)
-                        }
-                    }
-
-                    Section("Name") {
-                        TextField("Your name", text: $name)
-                    }
-
-                    Section("Birth Date & Time") {
-                        DatePicker(
-                            "Date and time",
-                            selection: $birthDate,
-                            in: ...Date.now,
-                            displayedComponents: hasBirthTime ? [.date, .hourAndMinute] : [.date]
-                        )
-
-                        Toggle("I know my exact birth time", isOn: $hasBirthTime)
-
-                        if !hasBirthTime {
-                            Text("Without a birth time, your Rising sign and house placements will be less accurate. Check your birth certificate if you can!")
-                                .font(.caption)
+            Form {
+                if isOnboarding {
+                    Section {
+                        VStack(spacing: 8) {
+                            Text("Welcome to the cosmos")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                            Text("Enter your birth details to calculate your natal chart. The more precise, the more accurate your readings.")
+                                .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .listRowBackground(Color.clear)
                     }
+                }
 
-                    Section("Birth Location") {
-                        if let loc = selectedLocation {
+                Section("Name") {
+                    TextField("Your name", text: $name)
+                }
+
+                Section("Birth Date & Time") {
+                    DatePicker(
+                        "Date and time",
+                        selection: $birthDate,
+                        in: ...Date.now,
+                        displayedComponents: hasBirthTime ? [.date, .hourAndMinute] : [.date]
+                    )
+
+                    Toggle("I know my exact birth time", isOn: $hasBirthTime)
+
+                    if !hasBirthTime {
+                        Text("Without a birth time, your Rising sign and house placements will be less accurate. Check your birth certificate if you can!")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Birth Location") {
+                    if let loc = selectedLocation {
+                        HStack {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(loc.name)
+                            Spacer()
+                            Button("Change") {
+                                selectedLocation = nil
+                                locationQuery = ""
+                                searchResults = []
+                            }
+                            .font(.caption)
+                        }
+                    } else {
+                        TextField("Search city...", text: $locationQuery)
+                            .autocorrectionDisabled()
+                            .onSubmit {
+                                searchLocation(locationQuery)
+                            }
+                            .onChange(of: locationQuery) { _, newValue in
+                                if newValue.count >= 2 {
+                                    searchLocation(newValue)
+                                } else {
+                                    searchResults = []
+                                }
+                            }
+
+                        if isSearching {
                             HStack {
-                                Image(systemName: "mappin.circle.fill")
-                                    .foregroundStyle(.green)
-                                Text(loc.name)
-                                Spacer()
-                                Button("Change") {
-                                    selectedLocation = nil
-                                    locationQuery = ""
-                                    searchResults = []
-                                }
-                                .font(.caption)
+                                ProgressView()
+                                Text("Searching...")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
-                        } else {
-                            TextField("Search city...", text: $locationQuery)
-                                .autocorrectionDisabled()
-                                .onSubmit {
-                                    searchLocation(locationQuery)
-                                }
-                                .onChange(of: locationQuery) { _, newValue in
-                                    if newValue.count >= 2 {
-                                        searchLocation(newValue)
-                                    } else {
-                                        searchResults = []
-                                    }
-                                }
+                        }
 
-                            if isSearching {
+                        ForEach(searchResults) { result in
+                            Button {
+                                selectedLocation = result
+                                locationQuery = result.name
+                                searchResults = []
+                            } label: {
                                 HStack {
-                                    ProgressView()
-                                    Text("Searching...")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            ForEach(searchResults) { result in
-                                Button {
-                                    selectedLocation = result
-                                    locationQuery = result.name
-                                    searchResults = []
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "mappin.circle.fill")
-                                            .foregroundStyle(.purple)
-                                        Text(result.name)
-                                            .foregroundStyle(.primary)
-                                    }
+                                    Image(systemName: "mappin.circle.fill")
+                                        .foregroundStyle(.purple)
+                                    Text(result.name)
+                                        .foregroundStyle(.primary)
                                 }
                             }
                         }
                     }
                 }
-
+            }
+            .safeAreaInset(edge: .bottom) {
                 Button(action: save) {
                     Group {
                         if isSaving {

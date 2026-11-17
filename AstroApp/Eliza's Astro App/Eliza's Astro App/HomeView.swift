@@ -110,6 +110,9 @@ struct HomeView: View {
     private func weeklyTransitsSection(report: WeeklyTransitReport) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "This Week's Energy", icon: "sparkles")
+            Text(weekDateRange(start: report.weekStart, end: report.weekEnd))
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             if report.topTransits.isEmpty {
                 Text("A relatively quiet week in the cosmos for you. Use this time to recharge and reflect.")
@@ -138,6 +141,12 @@ struct HomeView: View {
         .padding()
         .background(Color.purple.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func weekDateRange(start: Date, end: Date) -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMM d"
+        return "Week of \(fmt.string(from: start)) – \(fmt.string(from: end))"
     }
 
     private func weeklyGreeting() -> String {

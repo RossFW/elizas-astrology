@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import Eliza_s_Astro_App
 
-struct EphemerisTests {
+nonisolated struct EphemerisTests {
 
     // MARK: - JulianDate.fromDate must not crash on any valid Date
 
