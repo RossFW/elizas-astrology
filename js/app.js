@@ -248,15 +248,24 @@ function attachProfileFormHandlers(saveBtnId, onSave) {
       locationResults.style.display = 'block';
 
       locationResults.querySelectorAll('.location-result-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
           const lat = parseFloat(item.dataset.lat);
           const lon = parseFloat(item.dataset.lon);
           const name = item.dataset.name;
           latInput.value = lat;
           lonInput.value = lon;
           locNameInput.value = name;
-          // Timezone approximation from longitude
-          const tzOffsetSeconds = Math.round(lon / 15) * 3600;
+          // Try to get accurate timezone from API, fall back to longitude approximation
+          let tzOffsetSeconds = Math.round(lon / 15) * 3600;
+          try {
+            const tzResp = await fetch(`https://timeapi.io/api/timezone/coordinate?latitude=${lat}&longitude=${lon}`);
+            if (tzResp.ok) {
+              const tzData = await tzResp.json();
+              if (tzData.currentUtcOffset && tzData.currentUtcOffset.seconds !== undefined) {
+                tzOffsetSeconds = tzData.currentUtcOffset.seconds;
+              }
+            }
+          } catch { /* fall back to longitude approximation */ }
           tzInput.value = tzOffsetSeconds;
           locationInput.value = name;
           locationResults.style.display = 'none';
